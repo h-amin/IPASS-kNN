@@ -1,12 +1,6 @@
 import csv
 import math
-
-
-# ----------------------------------- TO-DO ------------------------------------------------
-# Zorg ervoor dat de classificaties worden meegenomen in csv_extract, om ervoor te
-# zorgen dat je nn_lst aangeeft van welk classificatie het toe behoort.
-# Vervolgens dat data meegeven aan je result en laat merken dat de classificatie correct is.
-# ------------------------------------------------------------------------------------------
+from collections import Counter
 
 
 # Uitpakken van het csv bestand
@@ -19,11 +13,15 @@ def csv_extract(file_names):
                 continue
             data_lst.append(record)
 
+    global class_lst
+    class_lst = [data_lst[i][-1] for i in range(len(data_lst))]  # Lijst met alle classificaties.
+
     # Verwijderen van iris classificatie
-    data_str = [data_lst[h][:4] for h in range(len(data_lst))]
+    data_str = [data_lst[h][:4] for h in range(len(data_lst))]  # Lijst met alle numerieke waarden.
 
     # Str waarde naar float veranderen
     train_data = [list(map(float, data_str[k])) for k in range(len(data_str))]
+
     return train_data
 
 
@@ -33,7 +31,6 @@ def euclidean_distance_formula(x1, x2):
     for i in range(len(x1) - 1):
         afstand += (x1[i] - x2[i]) ** 2
     sqrt_afstand = math.sqrt(afstand)
-    print(sqrt_afstand)
     return sqrt_afstand
 
 
@@ -43,10 +40,10 @@ def find_NN(train_data, test, nn):
     for record in train_data:
         ecld_product = euclidean_distance_formula(test, record)
         afstand_lst.append((record, ecld_product))
-    afstand_lst.sort(key=lambda result: result[1])
-    nn_lst = []
-    for i in range(nn):
-        nn_lst.append(afstand_lst[i][0])
+
+    afstand_lst.sort(key=lambda x: x[1])  # Dit methode sorteert de afstand_lst op kleinste ecld_product waarde.
+
+    nn_lst = [afstand_lst[i][0] for i in range(nn)]  # record list met n aantal records afhankelijk van de nn waarde.
 
     return nn_lst
 
@@ -54,10 +51,21 @@ def find_NN(train_data, test, nn):
 # Classificatie voorspelling m.b.v. find_NN. (NN = nearest_neighbor)
 def predict_class(train_data, test, nn):
     nearest_neighbors = find_NN(train_data, test, nn)
-    x = [i[-1] for i in nearest_neighbors]
+    classification_nn = []
 
-    voorspelling = max(set(x), key=x.count)
+    for i in range(len(nearest_neighbors)):
+        element = nearest_neighbors[i]
+        index = train_data.index(element) + 1
+        classification = class_lst[index - 1]
+        classification_nn.append(classification)
 
-    voorspelling = math.ceil(voorspelling)
-    # print(voorspelling)
-    return voorspelling
+    counts = Counter(classification_nn)  # Een dictionary dat de classes telt en in key/values opslaat voor hergebruik.
+
+    max_value = max(counts.values())
+
+    product = [k for k, v in counts.items() if v == max_value]  # vindt het maximum value en alle keys die
+    # daarop corresponderen.
+
+    for j in range(len(product)):
+        voorspelling = product[j]
+        return voorspelling
